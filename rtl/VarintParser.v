@@ -72,11 +72,14 @@ module VarintParser(
 	//We're done parsing a varint if we get a new byte with MSB clear
 	assign				done		= active && valid && !din[7];
 
-	//Output data updates when we finish parsing but is latched during parsing
-	//to avoid excessive toggles on the output bus
-	//TODO: zigzag decoding
-	reg[63:0]			dout_ff		= 0;
-	assign				dout		= done ? data_temp : dout_ff;
+	//Output data updates when we finish parsing and is held constant otherwise to aovid needless toggling
+	wire[63:0]			dout_unsigned	= done ? data_temp : 0;
+
+	//Decode "zigzag" sign coding
+	wire[63:0]			dout_signed		= dout_unsigned[0] ? ~(dout_unsigned >> 1) : (dout_unsigned >> 1);
+
+	//Mux signed/unsigned output
+	assign				dout			= dsign ? dout_signed : dout_unsigned;
 
 	//If we got ten bytes of data and still aren't done, that's an error
 	//since protobuf varints can't be >64 bits long
@@ -119,9 +122,8 @@ module VarintParser(
 		else if(valid)
 			bytecount	<= bytecount + 1'h1;
 
-		//Save output and clear internal state on reset
+		//Clear internal state on reset
 		if(done) begin
-			dout_ff			<= dout;
 			bytecount		<= 0;
 			data_temp_ff	<= 0;
 		end

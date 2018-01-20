@@ -109,7 +109,7 @@ module VarintParser_sim();
 					$display("FAIL: unsigned test case 1 failed");
 					$finish;
 				end
-			
+
 				start		<= 1;
 				valid		<= 1;
 				din			<= 8'hac;
@@ -122,6 +122,7 @@ module VarintParser_sim();
 				state		<= 3;
 			end
 
+			//signed test case: 03 -> -2
 			3: begin
 
 				if(!done || error || (dout != 300) ) begin
@@ -129,19 +130,47 @@ module VarintParser_sim();
 					$finish;
 				end
 
+				start		<= 1;
+				valid		<= 1;
+				dsign		<= 1;
+				din			<= 8'h3;
+
 				state		<= 4;
-				
+
+			end
+
+			//signed test case: 02 -> 1
+			4: begin
+
+				if(!done || error || ($signed(dout) != -2) ) begin
+					$display("FAIL: signed test case 1 failed");
+					$finish;
+				end
+
+				start		<= 1;
+				valid		<= 1;
+				dsign		<= 1;
+				din			<= 8'h2;
+
+				state		<= 5;
+
 			end
 
 			//Done
-			4: begin
+			5: begin
+
+				if(!done || error || ($signed(dout) != 1) ) begin
+					$display("FAIL: signed test case 2 failed");
+					$finish;
+				end
+
 				$display("PASS");
 				$finish;
 			end
-		
+
 		endcase
-		
+
 	end
-	
+
 
 endmodule
