@@ -32,104 +32,116 @@
 /**
 	@file
 	@author Andrew D. Zonenberg
-	@brief	Parser for Protobuf base-128 varint format
-
-	Format reference: https://developers.google.com/protocol-buffers/docs/encoding#varints
-
-	To begin parsing a new varint:
-		* Assert "start" and "valid", set "dsign" appropriately (1=signed, 0=unsigned),
-		  then feed the first data byte to "din".
-		* Provide subsequent data bytes at any time (need not be consecutive clocks) with "valid" asserted.
-		  Do not change "dsign" during parsing.
-
-	When parsing is complete, "done" goes high and "dout" is updated combinatorially.
-	If "error" goes high at any time an invalid encoding was provided and the output should be ignored.
+	@brief	Test case for VarintParser
  */
-module VarintParser(
-	input wire			clk,
+module VarintParser_sim();
 
-	input wire			start,
-	input wire			valid,
-	input wire[7:0]		din,
-	input wire			dsign,
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// 100 MHz clock and power-on reset
 
-	output wire[63:0]	dout,
-	output wire			done,
-	output wire			error
+	reg		ready	= 0;
+
+	reg		clk		= 0;
+
+	initial begin
+		#100;
+		ready = 1;
+	end
+
+	always begin
+		#5;
+		clk = 0;
+		#5;
+		clk = ready;
+	end
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// The DUT
+
+	reg			start	= 0;
+	reg			valid	= 0;
+	reg[7:0]	din 	= 0;
+	reg			dsign	= 0;
+
+	wire[63:0]	dout;
+	wire		done;
+	wire		error;
+
+	VarintParser dut(
+		.clk(clk),
+
+		.start(start),
+		.valid(valid),
+		.din(din),
+		.dsign(dsign),
+
+		.dout(dout),
+		.done(done),
+		.error(error)
 	);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//
+	// Testbench
 
-	reg					active_ff		= 0;
-	reg[63:0]			data_temp_ff	= 0;
-	reg[63:0]			data_temp		= 0;
-	reg[3:0]			bytecount		= 0;
-
-	//Combinatorial "parsing active" flag
-	wire				active		= active_ff || start;
-
-	//We're done parsing a varint if we get a new byte with MSB clear
-	assign				done		= active && valid && !din[7];
-
-	//Output data updates when we finish parsing but is latched during parsing
-	//to avoid excessive toggles on the output bus
-	//TODO: zigzag decoding
-	reg[63:0]			dout_ff		= 0;
-	assign				dout		= done ? data_temp : dout_ff;
-
-	//If we got ten bytes of data and still aren't done, that's an error
-	//since protobuf varints can't be >64 bits long
-	assign				error		= (bytecount == 10) && active;
-
-	//Update the temporary data combinatorially
-	always @(*) begin
-
-		//Default: copy last cycle's state
-		data_temp	<= data_temp_ff;
-
-		//New data? Need to save it!
-		if(valid) begin
-			case(bytecount)
-				0:	data_temp[0*7 +: 7]	<= din[6:0];
-				1:	data_temp[1*7 +: 7]	<= din[6:0];
-				2:	data_temp[2*7 +: 7]	<= din[6:0];
-				3:	data_temp[3*7 +: 7]	<= din[6:0];
-				4:	data_temp[4*7 +: 7]	<= din[6:0];
-				5:	data_temp[5*7 +: 7]	<= din[6:0];
-				6:	data_temp[6*7 +: 7]	<= din[6:0];
-				7:	data_temp[7*7 +: 7]	<= din[6:0];
-				8:	data_temp[8*7 +: 7]	<= din[6:0];
-				9:	data_temp[63]		<= din[0];		//special case for last byte (only one valid bit)
-			endcase
-		end
-		
-	end
+	reg[7:0] state	= 0;
 
 	always @(posedge clk) begin
 
-		//Active flag is set combinatorially. Clear it sequentially when we finish.
-		active_ff		<= active && !done;
+		start	<= 0;
+		valid	<= 0;
+		dsign	<= 0;
 
-		//New varint? We're now starting at the beginning of the message
-		if(start)
-			bytecount	<= 1;
+		case(state)
 
-		//Bump byte count as new data arrives
-		else if(valid)
-			bytecount	<= bytecount + 1'h1;
+			//protobuf varint test case #1: 08 -> 'd8
+			0: begin
+				start		<= 1;
+				valid		<= 1;
+				din			<= 8'h8;
 
-		//Save output and clear internal state on reset
-		if(done) begin
-			dout_ff			<= dout;
-			bytecount		<= 0;
-			data_temp_ff	<= 0;
-		end
+				state		<= 1;
+			end
 
-		//Save temporary state during parsing
-		else
-			data_temp_ff	<= data_temp;
-	
+			//test case #2: AC 02 -> 'd300
+			1: begin
+
+				if(!done || error || (dout != 8) ) begin
+					$display("FAIL: unsigned test case 1 failed");
+					$finish;
+				end
+			
+				start		<= 1;
+				valid		<= 1;
+				din			<= 8'hac;
+
+				state		<= 2;
+			end
+			2: begin
+				valid		<= 1;
+				din			<= 8'h02;
+				state		<= 3;
+			end
+
+			3: begin
+
+				if(!done || error || (dout != 300) ) begin
+					$display("FAIL: unsigned test case 2 failed");
+					$finish;
+				end
+
+				state		<= 4;
+				
+			end
+
+			//Done
+			4: begin
+				$display("PASS");
+				$finish;
+			end
+		
+		endcase
+		
 	end
+	
 
 endmodule
