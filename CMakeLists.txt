@@ -20,7 +20,7 @@ endif()
 add_custom_target(
 	analysis
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMAND cppcheck . --enable=style,performance,portability,missingInclude --force -I ${CMAKE_BINARY_DIR}/protobufs --suppress=missingIncludeSystem -q --check-config)
+	COMMAND cppcheck . --enable=style,performance,portability,missingInclude --force --suppress=missingIncludeSystem -q --check-config)
 
 add_subdirectory(src)
 
