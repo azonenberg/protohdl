@@ -27,70 +27,12 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "protohdlc.h"
+#ifndef protohdlc_h
+#define protohdlc_h
 
-void ShowUsage();
-void ShowVersion();
+#include "../log/log.h"
+#include <string>
 
-using namespace std;
+#include "ProtoFileParser.h"
 
-int main(int argc, char* argv[])
-{
-	Severity console_verbosity = Severity::NOTICE;
-
-	string ifname;
-
-	//Parse command-line arguments
-	for(int i=1; i<argc; i++)
-	{
-		string s(argv[i]);
-
-		//Let the logger eat its args first
-		if(ParseLoggerArguments(i, argc, argv, console_verbosity))
-			continue;
-
-		else if(s == "--help")
-		{
-			ShowUsage();
-			return 0;
-		}
-
-		else if(s == "--version")
-		{
-			ShowVersion();
-			return 0;
-		}
-
-		else if(ifname.empty())
-			ifname = s;
-
-		else
-		{
-			fprintf(stderr, "Unrecognized argument \"%s\"\n", argv[i]);
-			return 1;
-		}
-	}
-
-	//Set up logging
-	g_log_sinks.emplace(g_log_sinks.begin(), new ColoredSTDLogSink(console_verbosity));
-
-	//TODO
-
-	return 0;
-}
-
-void ShowVersion()
-{
-	printf(
-		"PROTOHDL Compiler v0.1 by Andrew D. Zonenberg.\n"
-		"\n"
-		"License: 3-clause BSD\n"
-		"This is free software: you are free to change and redistribute it.\n"
-		"There is NO WARRANTY, to the extent permitted by law.\n");
-}
-
-void ShowUsage()
-{
-	printf("Usage: protohdlc foo.proto\n");
-	exit(0);
-}
+#endif
