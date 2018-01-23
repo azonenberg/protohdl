@@ -32,6 +32,7 @@
 
 #include "../log/log.h"
 #include <string>
+#include <string.h>
 
 #include "ProtoFileParser.h"
 

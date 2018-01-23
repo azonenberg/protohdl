@@ -36,6 +36,16 @@
 class ProtoFileParser
 {
 public:
+	ProtoFileParser()
+	{}
+
+	ProtoFileParser(std::string fname);
+	virtual ~ProtoFileParser();
+
+	bool LoadProtoFile(std::string fname);
+
+protected:
+	bool LoadMessageBlock(FILE* fp);
 };
 
 #endif

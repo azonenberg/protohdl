@@ -74,7 +74,8 @@ int main(int argc, char* argv[])
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new ColoredSTDLogSink(console_verbosity));
 
-	//TODO
+	//Load the proto file
+	ProtoFileParser parser(ifname);
 
 	return 0;
 }

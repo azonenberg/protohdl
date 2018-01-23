@@ -1,4 +1,6 @@
 add_executable(protohdlc
+	ProtoFileParser.cpp
+
 	main.cpp
 )
 
