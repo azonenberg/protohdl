@@ -194,8 +194,31 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 	LogDebug("Processing message \"%s\"\n", mtype);
 	LogIndenter li;
 
-	//FIXME: stop before we go any further
-	return false;
+	while(!feof(fp))
+	{
+		//Read the field type
+		char fieldtype[128];
+		if(1 != fscanf(fp, "%127s", fieldtype))
+		{
+			LogError("Malformed message type\n");
+			return false;
+		}
+
+		//TODO: verify the type is valid
+
+		//Read the field name
+		char fieldname[128];
+		if(1 != fscanf(fp, "%127[^ \t=] = ", fieldname))
+		{
+			LogError("Malformed field name\n");
+			return false;
+		}
+
+		LogDebug("Field %s is of type %s\n", fieldname, fieldtype);
+
+		//FIXME: stop before we go any further
+		return false;
+	}
 
 	return true;
 }
