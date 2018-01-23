@@ -165,6 +165,11 @@ bool ProtoFileParser::LoadProtoFile(string fname)
 			break;
 		}
 
+		//Empty statement (ignore silently)
+		else if(key == ";")
+		{
+		}
+
 		//If we get here, we have a problem
 		else
 		{
@@ -196,15 +201,37 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 
 	while(!feof(fp))
 	{
+		//Ignore comments before the next declaration
+		if(!EatComments(fp))
+			return false;
+		if(feof(fp))
+			break;
+
+		//If we got a '}', we're done with this block
+		char tmp = fgetc(fp);
+		if(tmp == '}')
+			return true;
+		else
+			ungetc(tmp, fp);
+
 		//Read the field type
 		char fieldtype[128];
-		if(1 != fscanf(fp, "%127s", fieldtype))
+		if(1 != fscanf(fp, " %127s ", fieldtype))
 		{
 			LogError("Malformed message type\n");
 			return false;
 		}
+		if(!EatComments(fp))
+			return false;
+		string stype(fieldtype);
 
-		//TODO: verify the type is valid
+		//If the field type is "enum" then we have an inline enum
+		if(stype == "enum")
+		{
+			LogError("Inline enum not supported\n");
+			return false;
+			continue;
+		}
 
 		//Read the field name
 		char fieldname[128];
@@ -214,11 +241,70 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 			return false;
 		}
 
-		LogDebug("Field %s is of type %s\n", fieldname, fieldtype);
+		if(!EatComments(fp))
+			return false;
 
-		//FIXME: stop before we go any further
-		return false;
+		//Read the field value
+		int fieldid;
+		if(1 != fscanf(fp, "%d ;", &fieldid))
+		{
+			LogError("Malformed field ID (type=%s, name=%s)\n", fieldtype, fieldname);
+			return false;
+		}
+
+		//TODO: verify the type is valid
+
+		LogDebug("Field %s is of type %s (id = %d)\n", fieldname, fieldtype, fieldid);
+
+		//TODO: save this
 	}
+
+	return true;
+}
+
+/**
+	@brief Discard leading whitespace
+ */
+bool ProtoFileParser::EatSpaces(FILE* fp)
+{
+	char tmp = fgetc(fp);
+	while(isspace(tmp))
+		tmp = fgetc(fp);
+	ungetc(tmp, fp);
+
+	return true;
+}
+
+/**
+	@brief Discard comments
+ */
+bool ProtoFileParser::EatComments(FILE* fp)
+{
+	if(!EatSpaces(fp))
+		return false;
+
+	//Look for comments and discard them
+	int tmp = fgetc(fp);
+	if(tmp == '/')
+	{
+		//Next character should be a / as well
+		tmp = fgetc(fp);
+		if(tmp == '/')
+		{
+			while(tmp != '\n')
+				tmp = fgetc(fp);
+		}
+		else
+		{
+			LogError("Malformed comment\n");
+			return false;
+		}
+	}
+	else
+		ungetc(tmp, fp);
+
+	if(!EatSpaces(fp))
+		return false;
 
 	return true;
 }
