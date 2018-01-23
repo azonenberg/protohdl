@@ -187,7 +187,7 @@ bool ProtoFileParser::LoadProtoFile(string fname)
 
 bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 {
-	//Read the message type
+	//Read the message name
 	char mtype[128];
 	if(1 != fscanf(fp, " %127[^ {\n] {", mtype))
 	{
@@ -208,9 +208,12 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 			break;
 
 		//If we got a '}', we're done with this block
+		//Ignore empty statements (stray semicolons)
 		char tmp = fgetc(fp);
 		if(tmp == '}')
 			return true;
+		else if(tmp == ';')
+			continue;
 		else
 			ungetc(tmp, fp);
 
@@ -228,8 +231,8 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 		//If the field type is "enum" then we have an inline enum
 		if(stype == "enum")
 		{
-			LogError("Inline enum not supported\n");
-			return false;
+			if(!LoadEnumBlock(fp))
+				return false;
 			continue;
 		}
 
@@ -280,31 +283,88 @@ bool ProtoFileParser::EatSpaces(FILE* fp)
  */
 bool ProtoFileParser::EatComments(FILE* fp)
 {
-	if(!EatSpaces(fp))
-		return false;
-
 	//Look for comments and discard them
-	int tmp = fgetc(fp);
-	if(tmp == '/')
+	while(1)
 	{
-		//Next character should be a / as well
-		tmp = fgetc(fp);
+		//Remove leading spaces before the next comment
+		if(!EatSpaces(fp))
+			return false;
+
+		int tmp = fgetc(fp);
 		if(tmp == '/')
 		{
-			while(tmp != '\n')
-				tmp = fgetc(fp);
+			//Next character should be a / as well
+			tmp = fgetc(fp);
+			if(tmp == '/')
+			{
+				while(tmp != '\n')
+					tmp = fgetc(fp);
+			}
+			else
+			{
+				LogError("Malformed comment\n");
+				return false;
+			}
 		}
 		else
 		{
-			LogError("Malformed comment\n");
-			return false;
+			ungetc(tmp, fp);
+			break;
 		}
 	}
-	else
-		ungetc(tmp, fp);
 
 	if(!EatSpaces(fp))
 		return false;
+
+	return true;
+}
+
+bool ProtoFileParser::LoadEnumBlock(FILE* fp)
+{
+	//Read the enum's name
+	char ename[128];
+	if(1 != fscanf(fp, " %127[^ {\n] {", ename))
+	{
+		LogError("Malformed enum block identifier\n");
+		return false;
+	}
+
+	LogDebug("Enum %s\n", ename);
+	LogIndenter li;
+
+	while(!feof(fp))
+	{
+		//Ignore comments before the next declaration
+		if(!EatComments(fp))
+			return false;
+		if(feof(fp))
+			break;
+
+		//If we got a '}', we're done with this block
+		char tmp = fgetc(fp);
+		if(tmp == '}')
+			return true;
+		else
+			ungetc(tmp, fp);
+
+		//Read field name
+		char fname[128];
+		if(1 != fscanf(fp, " %127[^ \t=\n] = ", fname))
+		{
+			LogError("Malformed enum field identifier\n");
+			return false;
+		}
+
+		//Read field value
+		int fval;
+		if(1 != fscanf(fp, " %i;", &fval))
+		{
+			LogError("Malformed enum field value\n");
+			return false;
+		}
+
+		LogDebug("Field %s has value %d\n", fname, fval);
+	}
 
 	return true;
 }
