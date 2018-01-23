@@ -217,6 +217,8 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 		else
 			ungetc(tmp, fp);
 
+		bool repeated = false;
+
 		//Read the field type
 		char fieldtype[128];
 		if(1 != fscanf(fp, " %127s ", fieldtype))
@@ -228,10 +230,32 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 			return false;
 		string stype(fieldtype);
 
+		//If the field type is "repeated" then we have a vector field, read the actual field type
+		if(stype == "repeated")
+		{
+			repeated = true;
+			if(1 != fscanf(fp, " %127s ", fieldtype))
+			{
+				LogError("Malformed message type\n");
+				return false;
+			}
+			if(!EatComments(fp))
+				return false;
+			stype = fieldtype;
+		}
+
 		//If the field type is "enum" then we have an inline enum
-		if(stype == "enum")
+		else if(stype == "enum")
 		{
 			if(!LoadEnumBlock(fp))
+				return false;
+			continue;
+		}
+
+		//If the field type is "oneof" we have a one-of-N (kinda like a union)
+		else if(stype == "oneof")
+		{
+			if(!LoadOneofBlock(fp))
 				return false;
 			continue;
 		}
@@ -257,7 +281,7 @@ bool ProtoFileParser::LoadMessageBlock(FILE* fp)
 
 		//TODO: verify the type is valid
 
-		LogDebug("Field %s is of type %s (id = %d)\n", fieldname, fieldtype, fieldid);
+		LogDebug("Field %s is of type %s (id = %d, repeated=%d)\n", fieldname, fieldtype, fieldid, repeated);
 
 		//TODO: save this
 	}
@@ -367,4 +391,10 @@ bool ProtoFileParser::LoadEnumBlock(FILE* fp)
 	}
 
 	return true;
+}
+
+bool ProtoFileParser::LoadOneofBlock(FILE* fp)
+{
+	//TODO
+	return false;
 }

@@ -49,6 +49,7 @@ protected:
 	bool EatSpaces(FILE* fp);
 	bool EatComments(FILE* fp);
 	bool LoadEnumBlock(FILE* fp);
+	bool LoadOneofBlock(FILE* fp);
 };
 
 #endif
