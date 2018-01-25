@@ -64,6 +64,14 @@ bool ProtoFileParser::LoadProtoFile(string fname)
 	bool err = false;
 	while(!feof(fp))
 	{
+		if(!EatSpaces(fp))
+		{
+			err = true;
+			break;
+		}
+		if(feof(fp))
+			break;
+
 		//Read the keyword
 		char tmp[1024];
 		if(1 != fscanf(fp, " %1023s", tmp))
@@ -395,6 +403,80 @@ bool ProtoFileParser::LoadEnumBlock(FILE* fp)
 
 bool ProtoFileParser::LoadOneofBlock(FILE* fp)
 {
-	//TODO
-	return false;
+	//Read the message name
+	char mtype[128];
+	if(1 != fscanf(fp, " %127[^ {\n] {", mtype))
+	{
+		LogError("Malformed oneof block identifier\n");
+		return false;
+	}
+
+	//Debug logging
+	LogDebug("Processing oneof \"%s\"\n", mtype);
+	LogIndenter li;
+
+	while(!feof(fp))
+	{
+		//Ignore comments before the next declaration
+		if(!EatComments(fp))
+			return false;
+		if(feof(fp))
+			break;
+
+		//If we got a '}', we're done with this block
+		//Ignore empty statements (stray semicolons)
+		char tmp = fgetc(fp);
+		if(tmp == '}')
+			return true;
+		else if(tmp == ';')
+			continue;
+		else
+			ungetc(tmp, fp);
+
+		//Read the field type
+		char fieldtype[128];
+		if(1 != fscanf(fp, " %127s ", fieldtype))
+		{
+			LogError("Malformed message type\n");
+			return false;
+		}
+		if(!EatComments(fp))
+			return false;
+		string stype(fieldtype);
+
+		//Enum, oneof, and repeated are not allowed inside a oneof
+		if( (stype == "repeated") || (stype == "enum") || (stype == "oneof") )
+		{
+			LogError("enum, oneof, and repeated fields are not allowed inside a oneof block\n");
+			return false;
+		}
+
+
+		//Read the field name
+		char fieldname[128];
+		if(1 != fscanf(fp, "%127[^ \t=] = ", fieldname))
+		{
+			LogError("Malformed field name\n");
+			return false;
+		}
+
+		if(!EatComments(fp))
+			return false;
+
+		//Read the field value
+		int fieldid;
+		if(1 != fscanf(fp, "%d ;", &fieldid))
+		{
+			LogError("Malformed field ID (type=%s, name=%s)\n", fieldtype, fieldname);
+			return false;
+		}
+
+		//TODO: verify the type is valid
+
+		LogDebug("Option %s is of type %s (id = %d)\n", fieldname, fieldtype, fieldid);
+
+		//TODO: save this
+	}
+
+	return true;
 }
