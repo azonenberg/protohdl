@@ -34,6 +34,4 @@
 #include <string>
 #include <string.h>
 
-#include "ProtoFileParser.h"
-
 #endif
