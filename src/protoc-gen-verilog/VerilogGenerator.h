@@ -27,12 +27,25 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "protohdlc.h"
+#ifndef VerilogGenerator_h
+#define VerilogGenerator_h
 
-using namespace std;
+#include <google/protobuf/compiler/code_generator.h>
 
-int main(int argc, char* argv[])
+using namespace google::protobuf;
+using namespace google::protobuf::compiler;
+
+class VerilogGenerator : public CodeGenerator
 {
+public:
+	VerilogGenerator();
+	virtual ~VerilogGenerator();
 
-	return 0;
-}
+	virtual bool Generate(
+		const FileDescriptor * file,
+		const std::string & parameter,
+		GeneratorContext * generator_context,
+		string * error) const;
+};
+
+#endif

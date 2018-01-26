@@ -2,4 +2,4 @@
 add_subdirectory(log)
 
 # Our code
-add_subdirectory(protohdlc)
+add_subdirectory(protoc-gen-verilog)
