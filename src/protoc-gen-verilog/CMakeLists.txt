@@ -5,7 +5,7 @@ add_executable(protoc-gen-verilog
 )
 
 target_link_libraries(protoc-gen-verilog
-	log protobuf protoc)
+	log libprotoc.a libprotobuf.a)
 
 #force static analysis to rerun
 #TODO: automate this for every target?
