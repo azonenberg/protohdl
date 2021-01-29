@@ -1,0 +1,31 @@
+[*]
+[*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
+[*] Fri Jan 29 10:28:12 2021
+[*]
+[dumpfile] "/mnt/storage/mount/project/software/tutorial/protobuf/protobuf-hdl/src/protobufhdl/build/VarintParser_sim_300.vcd"
+[dumpfile_mtime] "Fri Jan 29 10:27:19 2021"
+[dumpfile_size] 1261
+[savefile] "/mnt/storage/mount/project/software/tutorial/protobuf/protobuf-hdl/src/protobufhdl/tests/VarintParser_sim.gtkw"
+[timestart] 0
+[size] 2113 1173
+[pos] 395 67
+*-14.444006 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] VarintParser_sim.
+[sst_width] 333
+[signals_width] 196
+[sst_expanded] 1
+[sst_vpaned_height] 353
+@28
+VarintParser_sim.ready
+VarintParser_sim.clk
+VarintParser_sim.start
+VarintParser_sim.valid
+@22
+VarintParser_sim.din[7:0]
+@25
+VarintParser_sim.dout[63:0]
+@28
+VarintParser_sim.done
+VarintParser_sim.error
+[pattern_trace] 1
+[pattern_trace] 0

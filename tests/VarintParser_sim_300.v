@@ -45,7 +45,7 @@ module VarintParser_sim();
 
 	initial begin
 		$monitor("ready=%b, clk=%b, start=%b, valid=%b, din=%b, dsign=%b, dout=%b, done=%b, error=%b", ready, clk, start, valid, din, dsign, dout, done, error);
-		$dumpfile("build/VarintParser_sim.vcd");
+		$dumpfile("build/VarintParser_sim_300.vcd");
 		$dumpvars(0, VarintParser_sim);
 
 		#100;
@@ -97,74 +97,26 @@ module VarintParser_sim();
 
 		case(state)
 
-			//protobuf varint test case #1: 08 -> 'd8
+			// test case #01: AC 02 -> 'd300
 			0: begin
-				start		<= 1;
-				valid		<= 1;
-				din			<= 8'h8;
-
-				state		<= 1;
-			end
-
-			//test case #2: AC 02 -> 'd300
-			1: begin
-
-				if(!done || error || (dout != 8) ) begin
-					$display("FAIL: unsigned test case 1 failed");
-					$finish;
-				end
 
 				start		<= 1;
 				valid		<= 1;
 				din			<= 8'hac;
 
-				state		<= 2;
+				state		<= 1;
 			end
-			2: begin
+			1: begin
 				valid		<= 1;
 				din			<= 8'h02;
-				state		<= 3;
+				state		<= 2;
 			end
 
-			//signed test case: 03 -> -2
-			3: begin
+			// done
+			2: begin
 
-				if(!done || error || (dout != 300) ) begin
-					$display("FAIL: unsigned test case 2 failed");
-					$finish;
-				end
-
-				start		<= 1;
-				valid		<= 1;
-				dsign		<= 1;
-				din			<= 8'h3;
-
-				state		<= 4;
-
-			end
-
-			//signed test case: 02 -> 1
-			4: begin
-
-				if(!done || error || ($signed(dout) != -2) ) begin
-					$display("FAIL: signed test case 1 failed");
-					$finish;
-				end
-
-				start		<= 1;
-				valid		<= 1;
-				dsign		<= 1;
-				din			<= 8'h2;
-
-				state		<= 5;
-
-			end
-
-			//Done
-			5: begin
-
-				if(!done || error || ($signed(dout) != 1) ) begin
-					$display("FAIL: signed test case 2 failed");
+				if(!done || error || ($signed(dout) != 300) ) begin
+					$display("FAIL: signed test case 01 failed");
 					$finish;
 				end
 
@@ -175,6 +127,5 @@ module VarintParser_sim();
 		endcase
 
 	end
-
 
 endmodule
