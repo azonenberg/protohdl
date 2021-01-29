@@ -44,6 +44,10 @@ module VarintParser_sim();
 	reg		clk		= 0;
 
 	initial begin
+		$monitor("ready=%b, clk=%b, start=%b, valid=%b, din=%b, dsign=%b, dout=%b, done=%b, error=%b", ready, clk, start, valid, din, dsign, dout, done, error);
+		$dumpfile("build/VarintParser_sim.vcd");
+		$dumpvars(0, VarintParser_sim);
+
 		#100;
 		ready = 1;
 	end
